@@ -7,10 +7,98 @@ fn main() {
     const TOTAL_COLUMNS: usize = 3;
     clearscreen();
     let mut board = create_board(TOTAL_ROWS, TOTAL_COLUMNS);
-    let human_char = ask_player_char();
-    let human_move = ask_player_move(board.clone(), human_char);
-    fill_box(&mut board, human_move[0], human_move[1], human_char);
-    print_board(board.clone());
+    let human_char = 'X';
+    let comp_char = 'O'; 
+
+    while !is_win(board.clone(), human_char) {
+        let human_move = ask_player_move(board.clone(), human_char);
+        fill_box(&mut board, human_move[0], human_move[1], human_char);
+        print_board(board.clone());
+        let best_move_arr = comp_best_move(&mut board, comp_char, human_char);
+        let best_move_num = move_array_to_num(best_move_arr, TOTAL_ROWS);
+        fill_box(&mut board, best_move_arr[0], best_move_arr[1], comp_char);
+        print_board(board.clone());
+    }
+
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// minimax functions
+
+fn minimax(
+    board: &mut Vec<Vec<char>>,
+    is_maximizing: bool,
+    depth: isize,
+    comp_char: char,
+    human_char: char,
+) -> isize {
+    let result = check_winner(board.clone());
+    if result != ' ' {
+        if result == 'D' {
+            return 0;
+        } else if result == human_char {
+            return -100;
+        } else {
+            return 100;
+        }
+    }
+
+    let x_length = board.len();
+    let y_length = board[0].len();
+
+    if is_maximizing {
+        let mut best_score = -100;
+        for i in 0..x_length {
+            for j in 0..y_length {
+                if board[i][j] == ' ' {
+                    board[i][j] = comp_char;
+                    let score = minimax(board, false, depth + 1, comp_char, human_char);
+                    board[i][j] = ' ';
+                    if score > best_score {
+                        best_score = score;
+                    }
+                }
+            }
+        }
+        return best_score - depth;
+    } else {
+        let mut best_score = 100;
+        for i in 0..x_length {
+            for j in 0..y_length {
+                if board[i][j] == ' ' {
+                    board[i][j] = human_char;
+                    let score = minimax(board, true, depth + 1, comp_char, human_char);
+                    board[i][j] = ' ';
+                    if score < best_score {
+                        best_score = score;
+                    }
+                }
+            }
+        }
+        return best_score - depth;
+    }
+}
+
+fn comp_best_move(board: &mut Vec<Vec<char>>, comp_char: char, human_char: char) -> [usize; 2] {
+    let x_length = board.len();
+    let y_length = board[0].len();
+    let mut best_score = -100;
+    let mut best_move: [usize; 2] = Default::default();
+    for i in 0..x_length {
+        for j in 0..y_length {
+            if board[i][j] == ' ' {
+                board[i][j] = comp_char;
+                let score = minimax(board, false, 1, comp_char, human_char);
+                board[i][j] = ' ';
+                let move_num = move_array_to_num([i, j], x_length);
+                if score > best_score {
+                    best_score = score;
+                    best_move = [i, j];
+                }
+            }
+        }
+    }
+    return best_move;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -142,5 +230,3 @@ fn create_board(total_rows: usize, total_colums: usize) -> Vec<Vec<char>> {
     }
     return array;
 }
-
-
