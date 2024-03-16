@@ -5,21 +5,74 @@ use std::io;
 fn main() {
     const TOTAL_ROWS: usize = 3;
     const TOTAL_COLUMNS: usize = 3;
-    clearscreen();
+    const MAX_FILL: usize = TOTAL_ROWS * TOTAL_COLUMNS;
     let mut board = create_board(TOTAL_ROWS, TOTAL_COLUMNS);
-    let human_char = 'X';
-    let comp_char = 'O'; 
 
-    while !is_win(board.clone(), human_char) {
-        let human_move = ask_player_move(board.clone(), human_char);
-        fill_box(&mut board, human_move[0], human_move[1], human_char);
-        print_board(board.clone());
-        let best_move_arr = comp_best_move(&mut board, comp_char, human_char);
-        let best_move_num = move_array_to_num(best_move_arr, TOTAL_ROWS);
-        fill_box(&mut board, best_move_arr[0], best_move_arr[1], comp_char);
-        print_board(board.clone());
+    let mut game_end = false;
+    clearscreen();
+    println!("[*] WELCOME TO TICTACTOE GAME [*]");
+    let human_char = ask_player_char();
+    let comp_char = if human_char == 'X' { 'O' } else { 'X' };
+    let mut fill_box_count = 0;
+    let mut winner = ' ';
+    let mut comp_last_move = 0;
+
+    while fill_box_count < MAX_FILL {
+        if comp_char == 'X' {
+            clearscreen();
+            let comp_move = comp_best_move(&mut board, comp_char, human_char);
+            fill_box(&mut board, comp_move[0], comp_move[1], comp_char);
+            fill_box_count += 1;
+            print_board(board.clone());
+            println!(
+                "[*] AI move : X -> {}",
+                move_array_to_num(comp_move, TOTAL_ROWS)    
+            );
+            if is_win(board.clone(), comp_char) {
+                winner = comp_char;
+                break;
+            }
+            let human_move = ask_player_move(board.clone(), human_char);
+            fill_box(&mut board, human_move[0], human_move[1], human_char);
+            fill_box_count += 1;
+            if is_win(board.clone(), human_char) {
+                winner = human_char;
+                break;
+            }
+        } else {
+            clearscreen();
+            print_board(board.clone());
+            if comp_last_move == 0 {
+                println!("[*] AI is waiting for your move...");
+            } else {
+                println!("[*] AI move: O -> {}", comp_last_move);
+            }
+            let human_move = ask_player_move(board.clone(), human_char);
+            fill_box(&mut board, human_move[0], human_move[1], human_char);
+            fill_box_count += 1;
+            if is_win(board.clone(), human_char) {
+                winner = human_char;
+                break;
+            }
+            let comp_move = comp_best_move(&mut board, comp_char, human_char);
+            fill_box(&mut board, comp_move[0], comp_move[1], comp_char);
+            fill_box_count += 1;
+            if is_win(board.clone(), comp_char) {
+                winner = comp_char;
+                break;
+            }
+            comp_last_move = move_array_to_num(comp_move, TOTAL_ROWS);
+        }
     }
-
+    clearscreen();
+    if winner == human_char {
+        println!("[*] YOU ({}) WIN [*]", human_char);
+    } else if winner == comp_char {
+        println!("[*] YOU ({}) LOSE [*]", comp_char);
+    } else {
+        println!("[*] DRAW! [*]");
+    }
+    print_board(board.clone());
 }
 
 ///////////////////////////////////////////////////////////////////////////////
